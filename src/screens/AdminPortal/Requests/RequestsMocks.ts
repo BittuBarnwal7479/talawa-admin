@@ -118,7 +118,7 @@ export const MOCKS4 = [
       data: {
         organization: {
           id: '',
-          membershipRequests: Array.from({ length: 8 }, (_, i) => ({
+          membershipRequests: Array.from({ length: 10 }, (_, i) => ({
             membershipRequestId: `${i + 1}`,
             createdAt: dayjs().subtract(1, 'year').add(i, 'days').toISOString(),
             status: 'pending',
@@ -134,6 +134,8 @@ export const MOCKS4 = [
                 'Emily Johnson',
                 'Michael Davis',
                 'Sarah Wilson',
+                'Chris Martin',
+                'Anna Brown',
               ][i],
               emailAddress: `testuser${i + 3}@example.com`,
             },

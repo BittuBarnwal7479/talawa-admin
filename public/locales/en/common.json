@@ -237,6 +237,7 @@
   "tablePagination": "Table pagination",
   "paginationPrevLabel": "Previous page",
   "paginationNextLabel": "Next page",
+  "pagination": "Pagination",
   "closeModal": "Close modal",
   "errorLoadingUsers": "Error loading users",
   "noUsersFound": "No users found",
@@ -307,6 +308,14 @@
   "unknownMember": "Unknown Member",
   "searchTags": "Search Tags",
   "sortBy": "Sort By",
+  "nameAsc": "Name (A-Z)",
+  "nameDesc": "Name (Z-A)",
+  "emailAsc": "Email (A-Z)",
+  "emailDesc": "Email (Z-A)",
+  "previous": "Previous",
+  "next": "Next",
+  "page": "Page",
+  "status": "Status",
   "previousYear": "Previous Year",
   "nextYear": "Next Year"
 }

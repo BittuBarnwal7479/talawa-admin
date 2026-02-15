@@ -37,7 +37,7 @@
  * - JSX.Element: A table displaying members or blocked users with options to block/unblock.
  */
 import { useQuery, useMutation } from '@apollo/client';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { NotificationToast } from 'components/NotificationToast/NotificationToast';
 import {
   BLOCK_USER_MUTATION_PG,
@@ -47,6 +47,7 @@ import {
   GET_ORGANIZATION_MEMBERS_PG,
   GET_ORGANIZATION_BLOCKED_USERS_PG,
 } from 'GraphQl/Queries/Queries';
+import InfiniteScroll from 'react-infinite-scroll-component';
 import TableLoader from 'components/TableLoader/TableLoader';
 import { useTranslation } from 'react-i18next';
 import { errorHandler } from 'utils/errorHandler';
@@ -73,6 +74,13 @@ type BlockUserRow = {
   index: number;
 };
 
+type SortingOption = 'name_asc' | 'name_desc' | 'email_asc' | 'email_desc';
+
+// Type guard to validate SortingOption
+const isSortingOption = (value: string): value is SortingOption => {
+  return ['name_asc', 'name_desc', 'email_asc', 'email_desc'].includes(value);
+};
+
 const BlockUser = (): JSX.Element => {
   // Translation hooks for internationalization
   const { t } = useTranslation('translation', {
@@ -90,6 +98,7 @@ const BlockUser = (): JSX.Element => {
   const [allMembers, setAllMembers] = useState<InterfaceUserPg[]>([]);
   const [blockedUsers, setBlockedUsers] = useState<InterfaceUserPg[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [sortingOption, setSortingOption] = useState<SortingOption>('name_asc');
   const [filteredAllMembers, setFilteredAllMembers] = useState<
     InterfaceUserPg[]
   >([]);
@@ -111,6 +120,8 @@ const BlockUser = (): JSX.Element => {
     loading: loadingBlockedUsers,
     error: errorBlockedUsers,
     refetch: refetchBlockedUsers,
+    pageInfo: pageInfoBlockedUsers,
+    fetchMore: fetchMoreBlockedUsers,
   } = useTableData<InterfaceUserPg, InterfaceUserPg, InterfaceOrganizationPg>(
     blockedUsersResult,
     {
@@ -137,6 +148,8 @@ const BlockUser = (): JSX.Element => {
     loading: loadingMembers,
     error: errorMembers,
     refetch: refetchMembers,
+    pageInfo: pageInfoMembers,
+    fetchMore: fetchMoreMembers,
   } = useTableData<InterfaceUserPg, InterfaceUserPg, InterfaceOrganizationPg>(
     membersResult,
     {
@@ -177,6 +190,44 @@ const BlockUser = (): JSX.Element => {
       setFilteredBlockedUsers(matchedBlockedUsers);
     }
   }, [searchTerm, allMembers, blockedUsers]);
+
+  // Apply sorting to displayed users
+  const sortUsers = useCallback(
+    (users: InterfaceUserPg[]): InterfaceUserPg[] => {
+      const sorted = [...users];
+      switch (sortingOption) {
+        case 'name_asc':
+          return sorted.sort((a, b) =>
+            (a.name || '').localeCompare(b.name || ''),
+          );
+        case 'name_desc':
+          return sorted.sort((a, b) =>
+            (b.name || '').localeCompare(a.name || ''),
+          );
+        case 'email_asc':
+          return sorted.sort((a, b) =>
+            (a.emailAddress || '').localeCompare(b.emailAddress || ''),
+          );
+        case 'email_desc':
+          return sorted.sort((a, b) =>
+            (b.emailAddress || '').localeCompare(a.emailAddress || ''),
+          );
+        default:
+          return sorted;
+      }
+    },
+    [sortingOption],
+  );
+
+  const sortedFilteredAllMembers = useMemo(
+    () => sortUsers(filteredAllMembers),
+    [filteredAllMembers, sortUsers],
+  );
+
+  const sortedFilteredBlockedUsers = useMemo(
+    () => sortUsers(filteredBlockedUsers),
+    [filteredBlockedUsers, sortUsers],
+  );
 
   // Mutations
   const [blockUser] = useMutation(BLOCK_USER_MUTATION_PG);
@@ -231,6 +282,53 @@ const BlockUser = (): JSX.Element => {
     setSearchTerm(value);
   }, []);
 
+  // Handle sorting
+  const handleSorting = useCallback((value: string): void => {
+    if (isSortingOption(value)) {
+      setSortingOption(value);
+    }
+  }, []);
+
+  // Load more members
+  const loadMoreMembers = useCallback(async (): Promise<void> => {
+    if (!currentUrl) return;
+    if (!pageInfoMembers?.hasNextPage) return;
+    if (!pageInfoMembers?.endCursor) return;
+
+    await fetchMoreMembers({
+      variables: {
+        id: currentUrl,
+        first: 32,
+        after: pageInfoMembers.endCursor,
+      },
+    });
+  }, [
+    fetchMoreMembers,
+    pageInfoMembers?.hasNextPage,
+    pageInfoMembers?.endCursor,
+    currentUrl,
+  ]);
+
+  // Load more blocked users
+  const loadMoreBlockedUsers = useCallback(async (): Promise<void> => {
+    if (!currentUrl) return;
+    if (!pageInfoBlockedUsers?.hasNextPage) return;
+    if (!pageInfoBlockedUsers?.endCursor) return;
+
+    await fetchMoreBlockedUsers({
+      variables: {
+        id: currentUrl,
+        first: 32,
+        after: pageInfoBlockedUsers.endCursor,
+      },
+    });
+  }, [
+    fetchMoreBlockedUsers,
+    pageInfoBlockedUsers?.hasNextPage,
+    pageInfoBlockedUsers?.endCursor,
+    currentUrl,
+  ]);
+
   // Header titles for the table
   const headerTitles: string[] = [
     '#',
@@ -240,8 +338,8 @@ const BlockUser = (): JSX.Element => {
   ];
 
   const displayedUsers = showBlockedMembers
-    ? filteredBlockedUsers
-    : filteredAllMembers;
+    ? sortedFilteredBlockedUsers
+    : sortedFilteredAllMembers;
 
   const tableRows: BlockUserRow[] = displayedUsers.map((user, index) => ({
     user,
@@ -353,6 +451,29 @@ const BlockUser = (): JSX.Element => {
           searchButtonTestId="searchBtn"
           dropdowns={[
             {
+              id: 'block-user-sort',
+              label: tCommon('sortBy'),
+              type: 'sort',
+              options: [
+                { label: tCommon('nameAsc'), value: 'name_asc' },
+                {
+                  label: tCommon('nameDesc'),
+                  value: 'name_desc',
+                },
+                {
+                  label: tCommon('emailAsc'),
+                  value: 'email_asc',
+                },
+                {
+                  label: tCommon('emailDesc'),
+                  value: 'email_desc',
+                },
+              ],
+              selectedOption: sortingOption,
+              onOptionChange: (value) => handleSorting(value.toString()),
+              dataTestIdPrefix: 'sortBlockUser',
+            },
+            {
               id: 'block-user-view',
               label: t('view'),
               type: 'filter',
@@ -371,15 +492,33 @@ const BlockUser = (): JSX.Element => {
         />
       </div>
       <div className={styles.listBox}>
-        {(!showBlockedMembers && filteredAllMembers.length > 0) ||
-        (showBlockedMembers && filteredBlockedUsers.length > 0) ? (
+        {(!showBlockedMembers && sortedFilteredAllMembers.length > 0) ||
+        (showBlockedMembers && sortedFilteredBlockedUsers.length > 0) ? (
           <div data-testid="userList">
-            <DataTable<BlockUserRow>
-              data={tableRows}
-              columns={tableColumns}
-              rowKey={(row: BlockUserRow) => row.user.id}
-              tableClassName={styles.custom_table}
-            />
+            <InfiniteScroll
+              dataLength={displayedUsers.length}
+              next={showBlockedMembers ? loadMoreBlockedUsers : loadMoreMembers}
+              loader={<TableLoader headerTitles={headerTitles} noOfRows={4} />}
+              hasMore={
+                showBlockedMembers
+                  ? (pageInfoBlockedUsers?.hasNextPage ?? false)
+                  : (pageInfoMembers?.hasNextPage ?? false)
+              }
+              className={styles.listBox}
+              data-testid="block-user-list"
+              endMessage={
+                <div className="w-100 text-center my-4">
+                  <h5 className="m-0">{tCommon('endOfResults')}</h5>
+                </div>
+              }
+            >
+              <DataTable<BlockUserRow>
+                data={tableRows}
+                columns={tableColumns}
+                rowKey={(row: BlockUserRow) => row.user.id}
+                tableClassName={styles.custom_table}
+              />
+            </InfiniteScroll>
           </div>
         ) : (
           <EmptyState

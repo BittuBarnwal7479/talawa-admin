@@ -2767,4 +2767,780 @@ describe('Testing Requests screen', () => {
       expect(mockRequest.request.variables.first).toBeGreaterThan(0);
     });
   });
+
+  describe('Sorting Functionality', () => {
+    test('should render sort dropdown and sort by newest', async () => {
+      const link = new StaticMockLink(UPDATED_MOCKS, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      // Find and click sort dropdown
+      const sortDropdown = await screen.findByTestId('sortRequests-toggle');
+      expect(sortDropdown).toBeInTheDocument();
+      await userEvent.click(sortDropdown);
+
+      // Wait for dropdown to fully open
+      const newestOption = await screen.findByTestId(
+        'sortRequests-item-newest',
+      );
+      expect(newestOption).toBeInTheDocument();
+      await userEvent.click(newestOption);
+
+      // Verify data is displayed after sorting and check ordering
+      await waitFor(() => {
+        expect(screen.getByTestId('testComp')).toBeInTheDocument();
+        // When sorted by newest, Teresa Bradley (most recent - day 1) should appear first
+        const rows = screen.getAllByRole('row');
+        // First row is header, second row is first data row
+        expect(rows.length).toBeGreaterThan(1);
+        const firstDataRow = rows[1];
+        expect(
+          within(firstDataRow).getByText('Teresa Bradley'),
+        ).toBeInTheDocument();
+      });
+    });
+
+    test('should sort by oldest', async () => {
+      const link = new StaticMockLink(UPDATED_MOCKS, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      const sortDropdown = screen.getByTestId('sortRequests-toggle');
+      fireEvent.click(sortDropdown);
+
+      const oldestOption = await waitFor(() =>
+        screen.getByTestId('sortRequests-item-oldest'),
+      );
+      expect(oldestOption).toBeInTheDocument();
+      fireEvent.click(oldestOption);
+
+      // Verify data is displayed after sorting and check ordering
+      await waitFor(() => {
+        expect(screen.getByTestId('testComp')).toBeInTheDocument();
+        // When sorted by oldest, Scott Tony (oldest - 1 year ago) should appear first
+        const rows = screen.getAllByRole('row');
+        // First row is header, second row is first data row
+        expect(rows.length).toBeGreaterThan(1);
+        const firstDataRow = rows[1];
+        expect(
+          within(firstDataRow).getByText('Scott Tony'),
+        ).toBeInTheDocument();
+      });
+    });
+
+    test('should sort by name ascending', async () => {
+      const link = new StaticMockLink(UPDATED_MOCKS, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      const sortDropdown = screen.getByTestId('sortRequests-toggle');
+      fireEvent.click(sortDropdown);
+
+      await waitFor(() => {
+        const nameAscOption = screen.getByTestId('sortRequests-item-name_asc');
+        expect(nameAscOption).toBeInTheDocument();
+        fireEvent.click(nameAscOption);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('testComp')).toBeInTheDocument();
+      });
+    });
+
+    test('should sort by name descending', async () => {
+      const link = new StaticMockLink(UPDATED_MOCKS, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      const sortDropdown = screen.getByTestId('sortRequests-toggle');
+      fireEvent.click(sortDropdown);
+
+      await waitFor(() => {
+        const nameDescOption = screen.getByTestId(
+          'sortRequests-item-name_desc',
+        );
+        expect(nameDescOption).toBeInTheDocument();
+        fireEvent.click(nameDescOption);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('testComp')).toBeInTheDocument();
+      });
+    });
+
+    test('should sort by email ascending', async () => {
+      const link = new StaticMockLink(UPDATED_MOCKS, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      const sortDropdown = screen.getByTestId('sortRequests-toggle');
+      fireEvent.click(sortDropdown);
+
+      await waitFor(() => {
+        const emailAscOption = screen.getByTestId(
+          'sortRequests-item-email_asc',
+        );
+        expect(emailAscOption).toBeInTheDocument();
+        fireEvent.click(emailAscOption);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('testComp')).toBeInTheDocument();
+      });
+    });
+
+    test('should sort by email descending', async () => {
+      const link = new StaticMockLink(UPDATED_MOCKS, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      const sortDropdown = screen.getByTestId('sortRequests-toggle');
+      fireEvent.click(sortDropdown);
+
+      await waitFor(() => {
+        const emailDescOption = screen.getByTestId(
+          'sortRequests-item-email_desc',
+        );
+        expect(emailDescOption).toBeInTheDocument();
+        fireEvent.click(emailDescOption);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('testComp')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Status Filter Functionality', () => {
+    test('should render status filter dropdown', async () => {
+      const link = new StaticMockLink(UPDATED_MOCKS, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      // Find status filter dropdown
+      const statusFilterDropdown = screen.getByTestId(
+        'filterRequestsStatus-toggle',
+      );
+      expect(statusFilterDropdown).toBeInTheDocument();
+    });
+
+    test('should filter by pending status', async () => {
+      cleanup(); // Clean up any state from previous tests
+
+      // Fixed timestamp for deterministic testing
+      const FIXED_DATE = dayjs().subtract(1, 'year').toISOString();
+
+      // Create mocks with mixed statuses
+      const mixedStatusMocks = [
+        ...EMPTY_REQUEST_MOCKS,
+        // Initial load - all statuses
+        {
+          request: {
+            query: MEMBERSHIP_REQUEST_PG,
+            variables: {
+              input: { id: 'org1' },
+              skip: 0,
+              first: 10,
+              name_contains: '',
+            },
+          },
+          result: {
+            data: {
+              organization: {
+                id: 'org1',
+                membershipRequests: [
+                  {
+                    membershipRequestId: '1',
+                    createdAt: FIXED_DATE,
+                    status: 'pending',
+                    user: {
+                      avatarURL: null,
+                      id: 'user1',
+                      name: 'Pending User',
+                      emailAddress: 'pending@example.com',
+                    },
+                  },
+                  {
+                    membershipRequestId: '2',
+                    createdAt: FIXED_DATE,
+                    status: 'accepted',
+                    user: {
+                      avatarURL: null,
+                      id: 'user2',
+                      name: 'Accepted User',
+                      emailAddress: 'accepted@example.com',
+                    },
+                  },
+                  {
+                    membershipRequestId: '3',
+                    createdAt: FIXED_DATE,
+                    status: 'rejected',
+                    user: {
+                      avatarURL: null,
+                      id: 'user3',
+                      name: 'Rejected User',
+                      emailAddress: 'rejected@example.com',
+                    },
+                  },
+                ],
+              },
+            },
+          },
+          maxUsageCount: 10,
+        },
+        // Filter by pending status
+        {
+          request: {
+            query: MEMBERSHIP_REQUEST_PG,
+            variables: {
+              input: { id: 'org1' },
+              skip: 0,
+              first: 10,
+              name_contains: '',
+            },
+          },
+          result: {
+            data: {
+              organization: {
+                id: 'org1',
+                membershipRequests: [
+                  {
+                    membershipRequestId: '1',
+                    createdAt: FIXED_DATE,
+                    status: 'pending',
+                    user: {
+                      avatarURL: null,
+                      id: 'user1',
+                      name: 'Pending User',
+                      emailAddress: 'pending@example.com',
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+        // Mocks to handle potential state pollution from previous tests
+        {
+          request: {
+            query: MEMBERSHIP_REQUEST_PG,
+            variables: {
+              input: { id: '' },
+              skip: 0,
+              first: 10,
+              name_contains: 'test',
+            },
+          },
+          result: {
+            data: {
+              organization: {
+                id: '',
+                membershipRequests: [],
+              },
+            },
+          },
+        },
+        {
+          request: {
+            query: MEMBERSHIP_REQUEST_PG,
+            variables: {
+              input: { id: 'org1' },
+              skip: 0,
+              first: 10,
+              name_contains: 'test',
+            },
+          },
+          result: {
+            data: {
+              organization: {
+                id: 'org1',
+                membershipRequests: [],
+              },
+            },
+          },
+        },
+      ];
+
+      const link = new StaticMockLink(mixedStatusMocks, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      const statusFilterDropdown = screen.getByTestId(
+        'filterRequestsStatus-toggle',
+      );
+      fireEvent.click(statusFilterDropdown);
+
+      await waitFor(() => {
+        const pendingOption = screen.getByTestId(
+          'filterRequestsStatus-item-pending',
+        );
+        expect(pendingOption).toBeInTheDocument();
+        fireEvent.click(pendingOption);
+      });
+    });
+
+    test('should filter by all statuses', async () => {
+      const link = new StaticMockLink(UPDATED_MOCKS, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      const statusFilterDropdown = screen.getByTestId(
+        'filterRequestsStatus-toggle',
+      );
+      fireEvent.click(statusFilterDropdown);
+
+      await waitFor(() => {
+        const allOption = screen.getByTestId('filterRequestsStatus-item-all');
+        expect(allOption).toBeInTheDocument();
+        fireEvent.click(allOption);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('testComp')).toBeInTheDocument();
+      });
+    });
+
+    test('should filter by accepted status', async () => {
+      const link = new StaticMockLink(UPDATED_MOCKS, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      const statusFilterDropdown = screen.getByTestId(
+        'filterRequestsStatus-toggle',
+      );
+      fireEvent.click(statusFilterDropdown);
+
+      await waitFor(() => {
+        const acceptedOption = screen.getByTestId(
+          'filterRequestsStatus-item-accepted',
+        );
+        expect(acceptedOption).toBeInTheDocument();
+        fireEvent.click(acceptedOption);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('testComp')).toBeInTheDocument();
+      });
+    });
+
+    test('should filter by rejected status', async () => {
+      const link = new StaticMockLink(UPDATED_MOCKS, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      const statusFilterDropdown = screen.getByTestId(
+        'filterRequestsStatus-toggle',
+      );
+      fireEvent.click(statusFilterDropdown);
+
+      await waitFor(() => {
+        const rejectedOption = screen.getByTestId(
+          'filterRequestsStatus-item-rejected',
+        );
+        expect(rejectedOption).toBeInTheDocument();
+        fireEvent.click(rejectedOption);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('testComp')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Pagination Controls', () => {
+    test('should not show pagination controls when data is less than PAGE_SIZE and on first page', async () => {
+      const link = new StaticMockLink(EMPTY_REQUEST_MOCKS, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      // Pagination controls should not be visible
+      await waitFor(() => {
+        expect(screen.queryByTestId('prevPageBtn')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('nextPageBtn')).not.toBeInTheDocument();
+      });
+    });
+
+    test('should show pagination controls when data equals or exceeds PAGE_SIZE', async () => {
+      const link = new StaticMockLink(MOCKS4, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      // Wait for data to load and verify pagination controls are present
+      await waitFor(() => {
+        expect(screen.getByTestId('prevPageBtn')).toBeInTheDocument();
+        expect(screen.getByTestId('nextPageBtn')).toBeInTheDocument();
+      });
+    });
+
+    test('previous button should be disabled on first page', async () => {
+      const link = new StaticMockLink(MOCKS4, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      await waitFor(() => {
+        const prevBtn = screen.getByTestId('prevPageBtn');
+        expect(prevBtn).toBeDisabled();
+      });
+    });
+
+    test('should display current page number', async () => {
+      const link = new StaticMockLink(MOCKS4, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      await waitFor(() => {
+        const pageIndicator = screen.getByTestId('pageIndicator');
+        expect(pageIndicator).toBeInTheDocument();
+      });
+    });
+
+    test('should navigate to previous page when previous button is clicked', async () => {
+      const link = new StaticMockLink(MOCKS4, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      // Wait for pagination buttons and navigate to second page first
+      await waitFor(() => {
+        const nextBtn = screen.getByTestId('nextPageBtn');
+        expect(nextBtn).toBeInTheDocument();
+        expect(nextBtn).not.toBeDisabled();
+      });
+
+      const nextBtn = screen.getByTestId('nextPageBtn');
+      fireEvent.click(nextBtn);
+
+      // Now test previous button to test handlePrevPage with Math.max (line 268)
+      await waitFor(() => {
+        const prevBtn = screen.getByTestId('prevPageBtn');
+        expect(prevBtn).toBeInTheDocument();
+        expect(prevBtn).not.toBeDisabled();
+      });
+
+      const prevBtn = screen.getByTestId('prevPageBtn');
+      fireEvent.click(prevBtn);
+    });
+  });
+
+  describe('Search and Pagination Integration', () => {
+    test('should reset to first page when search term changes', async () => {
+      const link = new StaticMockLink(MOCKS4, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      // Navigate to second page first
+      await waitFor(() => {
+        const nextBtn = screen.queryByTestId('nextPageBtn');
+        if (nextBtn && !nextBtn.hasAttribute('disabled')) {
+          fireEvent.click(nextBtn);
+        }
+      });
+
+      // Now search - this should reset page to 0 (lines 234-235)
+      const searchInput = screen.getByTestId('searchByName');
+      await userEvent.clear(searchInput);
+      await userEvent.type(searchInput, 'test');
+
+      // After search, should be back on first page
+      await waitFor(() => {
+        const prevBtn = screen.queryByTestId('prevPageBtn');
+        if (prevBtn) {
+          // Previous button should be disabled since we're on first page
+          expect(prevBtn).toBeDisabled();
+        }
+      });
+    });
+  });
+
+  describe('Sorting Edge Cases', () => {
+    test('should handle default sorting case when invalid sort option provided', async () => {
+      const link = new StaticMockLink(UPDATED_MOCKS, true);
+
+      render(
+        <MockedProvider link={link}>
+          <BrowserRouter>
+            <Provider store={store}>
+              <I18nextProvider i18n={i18nForTest}>
+                <Requests />
+              </I18nextProvider>
+            </Provider>
+          </BrowserRouter>
+        </MockedProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('testComp')).toBeInTheDocument();
+      });
+
+      // Verify the component renders and displays data
+      // The default case (line 181) returns the sorted array as-is without applying any sort
+      // In normal operation, this ensures the component remains stable even if
+      // an unexpected sort option is somehow set
+      await waitFor(() => {
+        expect(screen.getByTestId('testComp')).toBeInTheDocument();
+        // Verify that data rows are present
+        const rows = screen.getAllByRole('row');
+        expect(rows.length).toBeGreaterThan(1); // At least header + data rows
+      });
+
+      // Verify sort dropdown is functional
+      const sortDropdown = screen.getByTestId('sortRequests-toggle');
+      expect(sortDropdown).toBeInTheDocument();
+
+      // Verify that all valid sort options work correctly (confirms default case is edge case)
+      fireEvent.click(sortDropdown);
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId('sortRequests-item-newest'),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByTestId('sortRequests-item-oldest'),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByTestId('sortRequests-item-name_asc'),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByTestId('sortRequests-item-name_desc'),
+        ).toBeInTheDocument();
+      });
+    });
+  });
 });

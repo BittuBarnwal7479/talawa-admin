@@ -49,6 +49,15 @@ import { Group, Search } from '@mui/icons-material';
 import { DataTable } from 'shared-components/DataTable/DataTable';
 import ErrorPanel from 'shared-components/ErrorPanel';
 
+type SortingOption =
+  | 'name_asc'
+  | 'name_desc'
+  | 'email_asc'
+  | 'email_desc'
+  | 'newest'
+  | 'oldest';
+type StatusFilterOption = 'all' | 'pending' | 'accepted' | 'rejected';
+
 interface InterfaceRequestsListItem {
   membershipRequestId: string;
   createdAt: string;
@@ -96,6 +105,10 @@ const Requests = (): JSX.Element => {
 
   // Define constants and state variables
   const [searchByName, setSearchByName] = useState<string>('');
+  const [sortingOption, setSortingOption] = useState<SortingOption>('newest');
+  const [statusFilter, setStatusFilter] =
+    useState<StatusFilterOption>('pending');
+  const [currentPage, setCurrentPage] = useState<number>(0);
   const userRole = getItem('role') as string;
   const { orgId = '' } = useParams();
   const organizationId = orgId;
@@ -108,7 +121,7 @@ const Requests = (): JSX.Element => {
           id: organizationId,
         },
         first: PAGE_SIZE,
-        skip: 0,
+        skip: currentPage * PAGE_SIZE,
         name_contains: searchByName,
       },
       notifyOnNetworkStatusChange: true,
@@ -135,12 +148,53 @@ const Requests = (): JSX.Element => {
 
   const { data: orgsData } = useQuery(ORGANIZATION_LIST);
 
-  // Filter to show only pending requests
+  // Filter by status and apply sorting
   const displayedRequests = useMemo(() => {
-    return allRequests.filter(
-      (req: InterfaceRequestsListItem) => req.status === 'pending',
-    );
-  }, [allRequests]);
+    // Apply status filter
+    const filtered =
+      statusFilter === 'all'
+        ? allRequests
+        : allRequests.filter(
+            (req: InterfaceRequestsListItem) => req.status === statusFilter,
+          );
+
+    // Apply sorting
+    const sorted = [...filtered];
+    switch (sortingOption) {
+      case 'name_asc':
+        return sorted.sort((a, b) =>
+          (a.user?.name || '').localeCompare(b.user?.name || ''),
+        );
+      case 'name_desc':
+        return sorted.sort((a, b) =>
+          (b.user?.name || '').localeCompare(a.user?.name || ''),
+        );
+      case 'email_asc':
+        return sorted.sort((a, b) =>
+          (a.user?.emailAddress || '').localeCompare(
+            b.user?.emailAddress || '',
+          ),
+        );
+      case 'email_desc':
+        return sorted.sort((a, b) =>
+          (b.user?.emailAddress || '').localeCompare(
+            a.user?.emailAddress || '',
+          ),
+        );
+      case 'newest':
+        return sorted.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+      case 'oldest':
+        return sorted.sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        );
+      default:
+        return sorted;
+    }
+  }, [allRequests, sortingOption, statusFilter]);
 
   // Precompute request index map for O(1) serial number lookup
   const requestIndexMap = useMemo(() => {
@@ -192,6 +246,59 @@ const Requests = (): JSX.Element => {
    */
   const handleSearch = (value: string): void => {
     setSearchByName(value);
+    setCurrentPage(0); // Reset to first page on search
+  };
+
+  /**
+   * Handles sorting option change.
+   *
+   * @param value - The sorting option selected.
+   */
+  const handleSorting = (value: string): void => {
+    const validSortOptions: SortingOption[] = [
+      'name_asc',
+      'name_desc',
+      'email_asc',
+      'email_desc',
+      'newest',
+      'oldest',
+    ];
+    if (validSortOptions.includes(value as SortingOption)) {
+      setSortingOption(value as SortingOption);
+      setCurrentPage(0); // Reset to first page on sort change
+    }
+  };
+
+  /**
+   * Handles status filter change.
+   *
+   * @param value - The status filter option selected.
+   */
+  const handleStatusFilter = (value: string): void => {
+    const validStatusOptions: StatusFilterOption[] = [
+      'all',
+      'pending',
+      'accepted',
+      'rejected',
+    ];
+    if (validStatusOptions.includes(value as StatusFilterOption)) {
+      setStatusFilter(value as StatusFilterOption);
+      setCurrentPage(0); // Reset to first page on filter change
+    }
+  };
+
+  /**
+   * Handles pagination - go to next page.
+   */
+  const handleNextPage = (): void => {
+    setCurrentPage((prev) => prev + 1);
+  };
+
+  /**
+   * Handles pagination - go to previous page.
+   */
+  const handlePrevPage = (): void => {
+    setCurrentPage((prev) => Math.max(0, prev - 1));
   };
 
   // Header titles for the table
@@ -350,7 +457,39 @@ const Requests = (): JSX.Element => {
         onSearchSubmit={handleSearch}
         searchInputTestId="searchByName"
         searchButtonTestId="searchButton"
-        hasDropdowns={false}
+        hasDropdowns={true}
+        dropdowns={[
+          {
+            id: 'requests-sort',
+            label: tCommon('sortBy'),
+            type: 'sort',
+            options: [
+              { label: tCommon('Latest'), value: 'newest' },
+              { label: tCommon('Oldest'), value: 'oldest' },
+              { label: tCommon('nameAsc'), value: 'name_asc' },
+              { label: tCommon('nameDesc'), value: 'name_desc' },
+              { label: tCommon('emailAsc'), value: 'email_asc' },
+              { label: tCommon('emailDesc'), value: 'email_desc' },
+            ],
+            selectedOption: sortingOption,
+            onOptionChange: (value) => handleSorting(value.toString()),
+            dataTestIdPrefix: 'sortRequests',
+          },
+          {
+            id: 'requests-status-filter',
+            label: tCommon('status'),
+            type: 'filter',
+            options: [
+              { label: t('requests.pending'), value: 'pending' },
+              { label: t('requests.accepted'), value: 'accepted' },
+              { label: t('requests.rejected'), value: 'rejected' },
+              { label: tCommon('all'), value: 'all' },
+            ],
+            selectedOption: statusFilter,
+            onOptionChange: (value) => handleStatusFilter(value.toString()),
+            dataTestIdPrefix: 'filterRequestsStatus',
+          },
+        ]}
       />
 
       {error ? (
@@ -390,11 +529,42 @@ const Requests = (): JSX.Element => {
           {loading ? (
             <TableLoader headerTitles={headerTitles} noOfRows={PAGE_SIZE} />
           ) : (
-            <DataTable<InterfaceRequestsListItem>
-              data={displayedRequests}
-              columns={columns}
-              rowKey="membershipRequestId"
-            />
+            <>
+              <DataTable<InterfaceRequestsListItem>
+                data={displayedRequests}
+                columns={columns}
+                rowKey="membershipRequestId"
+              />
+              {(displayedRequests.length >= PAGE_SIZE || currentPage > 0) && (
+                <div
+                  className="d-flex justify-content-between align-items-center p-3"
+                  role="navigation"
+                  aria-label={tCommon('pagination')}
+                >
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 0}
+                    data-testid="prevPageBtn"
+                  >
+                    {tCommon('previous')}
+                  </Button>
+                  <span data-testid="pageIndicator" aria-live="polite">
+                    {tCommon('page')} {currentPage + 1}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={allRequests.length < PAGE_SIZE}
+                    data-testid="nextPageBtn"
+                  >
+                    {tCommon('next')}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

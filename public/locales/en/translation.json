@@ -328,7 +328,10 @@
     "profilePictureAlt": "Profile picture of {{name}}",
     "placeholderAvatarAlt": "Placeholder avatar",
     "newMembersWillAppearHere": "New membership requests will appear here",
-    "errorLoadingRequests": "Error occurred while loading Membership Requests"
+    "errorLoadingRequests": "Error occurred while loading Membership Requests",
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "rejected": "Rejected"
   },
   "users": {
     "membershipStatus": {
